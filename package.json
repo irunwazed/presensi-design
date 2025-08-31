@@ -1,0 +1,19 @@
+{
+  "name": "presensi",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "astro": "^5.13.5",
+    "tailwindcss": "^4.1.12"
+  }
+}
