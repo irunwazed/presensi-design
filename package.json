@@ -12,6 +12,7 @@
     "preview": "astro preview"
   },
   "dependencies": {
+    "@astrojs/node": "^9.4.3",
     "@tailwindcss/vite": "^4.1.12",
     "astro": "^5.13.5",
     "sweetalert2": "^11.22.5",
