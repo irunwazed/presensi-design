@@ -8,3 +8,5 @@ output
 .vscode
 
 .astro
+# Local Netlify folder
+.netlify
