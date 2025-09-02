@@ -31,3 +31,49 @@ export const getCookie = (name: string): string | null => {
     }
     return null;
 }
+
+function saveToStorage(key: string, value: any): void {
+  try {
+    const serializedValue = JSON.stringify(value);
+    localStorage.setItem(key, serializedValue);
+  } catch (error) {
+    console.error('Error saving to storage', error);
+  }
+}
+
+
+function loadFromStorage<T>(key: string): T | null {
+  try {
+    const serializedValue = localStorage.getItem(key);
+    if (!serializedValue) return null;
+    return JSON.parse(serializedValue) as T;
+  } catch (error) {
+    console.error('Error loading from storage', error);
+    return null;
+  }
+}
+
+type Profile = {
+    username:string,
+    name:string,
+    jabatan:string,
+    radius:number,
+    radiusWFH:number
+}
+
+
+export const saveProfile = (username: string, name: string, jabatan:string, radius:number, radiusWFH:number) => {
+    const data:Profile = {
+        username,
+        name,
+        jabatan,
+        radius,
+        radiusWFH
+    }
+    saveToStorage("profile", data)
+}
+
+export const getProfile = () => {
+    const data = loadFromStorage<Profile>("profile")
+    return data
+}

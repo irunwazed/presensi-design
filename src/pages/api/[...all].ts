@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { HTTPResponse, requestGet, requestPost } from '../../lib/request';
 import { getTimeRangeResult } from '../../lib/time';
+import { getAccount } from '../../lib/account';
+import { getAddress, getPosisi } from '../../lib/map';
 
 type Handler = (req: Request, params: Record<string, string>) => Promise<Response> | Response;
 
@@ -21,26 +23,34 @@ routes.set('GET:/', async (req) => {
 // Register route GET /api/hello
 routes.set('POST:/login', async (req) => {
     const { username, password, totp } = await req.json();
+
+    const ph = getAccount(username)
+    if(!ph){
+        return HTTPResponse({
+            status: 401, message: "tidak terdaftar"
+        })
+    }
+
     const payload = {
         u: username,
         p: password,
         otp: totp,
         d: '4ndr01d-0pt1mu5-p121m3',
-        'ph-id': '49b956bf737edce5',
-        'ph-type': 'GSM',
-        'ph-manufacturer': 'Xiaomi',
-        'ph-model': '24069PC21G',
-        'ph-product': 'peridot_global'
+        "ph-id": ph.phId,
+        "ph-type": ph.phType,
+        "ph-manufacturer": ph.phManufacturer,
+        "ph-model": ph.phModel,
+        "ph-product": ph.phProduct
     };
     const pre: any = await requestPost(API_URL + "/login", payload)
     if (!pre?.session_id) {
-        return new Response(JSON.stringify({ message: pre?.message || 'username, password, otp tidak cocok' }), {
-            headers: { 'Content-Type': 'application/json' },
-        });
+        return HTTPResponse({
+            status: 400, message:  pre?.message || 'username, password, otp tidak cocok'
+        })
     }
 
     const token = pre?.session_id
-    return new Response(JSON.stringify({ message: 'Hello from GET /hello', token: token }), {
+    return new Response(JSON.stringify({ message: 'Berhasil login', token: token }), {
         headers: { 'Content-Type': 'application/json' },
     });
 });
@@ -121,18 +131,68 @@ routes.set('POST:/faceverification', async (req) => {
     }
 
     const { image } = await req.json();
-    console.log("image", image)
 
-    // const data:any = await requestPost(API_URL + "/faceverification", {"img": image}, "lbp_presence="+bearerToken)
-    // if(data?.status != '1'){
-    //     return HTTPResponse({
-    //         status: 400, message: data?.message || "Bad Request"
-    //     })
-    // }
+    const data:any = await requestPost(API_URL + "/faceverification", {"img": image}, "lbp_presence="+bearerToken)
+    if(data?.status != '1'){
+        return HTTPResponse({
+            status: 400, message: data?.message || "Bad Request"
+        })
+    }
+
+    console.log("data", data)
 
 
     return HTTPResponse({
-        status: 200, message: "Berhasil get data", data: ""
+        status: 200, message: "Berhasil get data", data: data
+    })
+});
+
+
+
+
+routes.set('POST:/profile', async (req) => {
+
+    const auth = req.headers.get('authorization');
+    let bearerToken: string | null = null;
+    if (auth && auth.startsWith('Bearer ')) {
+        bearerToken = auth.slice(7);
+    }
+    if (!bearerToken) {
+        return HTTPResponse({
+            status: 401, message: "Invalid token"
+        })
+    }
+
+    const {username}  =  await req.json();
+    console.log("username", username)
+    const ph = getAccount(username)
+    if(!ph){
+        return HTTPResponse({
+            status: 400, message: "tidak terdaftar"
+        })
+    }
+
+
+    const payload = {
+        "ph-id": ph.phId,
+        "ph-type": ph.phType,
+        "ph-manufacturer": ph.phManufacturer,
+        "ph-model": ph.phModel,
+        "ph-product": ph.phProduct,
+    };
+
+    const data:any = await requestPost(API_URL + "/updatedata", payload, "lbp_presence="+bearerToken)
+    if(data?.status != '1'){
+        return HTTPResponse({
+            status: 400, message: data?.message || "Bad Request"
+        })
+    }
+
+    console.log("data", data)
+
+
+    return HTTPResponse({
+        status: 200, message: "Berhasil get data", data: data
     })
 });
 
@@ -150,7 +210,7 @@ routes.set('POST:/presensi', async (req) => {
         })
     }
 
-    const { workfrom, timezone } = await req.json();
+    const { workfrom, timezone, username } = await req.json();
 
     if(parseInt(workfrom) != 0 && parseInt(workfrom) != 1){
         return HTTPResponse({
@@ -158,23 +218,36 @@ routes.set('POST:/presensi', async (req) => {
         })
     }
 
+    const ph = getAccount(username)
+    if(!ph){
+        return HTTPResponse({
+            status: 400, message: "tidak terdaftar"
+        })
+    }
+
+    const lokasi = getPosisi()
+    const add = await getAddress(lokasi.pos.lat, lokasi.pos.lng)
+
+
     const payload = {
         "timezone": timezone || "Asia/Jakarta",
-        "latt": "",
-        "lng": "",
+        "latt": lokasi.pos.lat,
+        "lng": lokasi.pos.lng,
         "workfrom": workfrom, // 0 || 1
         "checkintype": getTimeRangeResult(), // 1, // 0 - 2
-        "address": "",
+        "address":  add,
         "kesehatan": "sehat",
         "devicetype": "0",
-        "accu": 0,
-        "ph-id": "pegawai!.ph_id",
-        "ph-type": "pegawai!.ph_type,",
-        "ph-manufacturer": "pegawai!.ph_manufacturer",
-        "ph-model": "pegawai!.ph_model",
-        "ph-product": "pegawai!.ph_product",
+        "accu": lokasi.jarak,
+        "ph-id": ph.phId,
+        "ph-type": ph.phType,
+        "ph-manufacturer": ph.phManufacturer,
+        "ph-model": ph.phModel,
+        "ph-product": ph.phProduct,
         "fg": 0,
     };
+
+    console.log("payload", payload)
 
     // const data:any = await requestPost(API_URL + "/absensi", payload, "lbp_presence="+bearerToken)
     // if(data?.status != '1'){

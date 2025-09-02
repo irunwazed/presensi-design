@@ -2,12 +2,12 @@ import { requestGet, requestPost } from "../lib/request";
 import { getCookie, setCookie } from "../lib/storage";
 
 
-export const login = async (username: string, password: string, totp: string): Promise<{ status: boolean, message: string }> => {
+export const serviceLogin = async (username: string, password: string, totp: string): Promise<{ status: boolean, message: string }> => {
 
     const data: any = await requestPost("/api/login", {
-        username: "199710262023211003",
-        password: "Qwerty12345@",
-        totp: "897883"
+        username: username,
+        password: password,
+        totp: totp
     });
 
     if (!data?.token) {
@@ -17,14 +17,39 @@ export const login = async (username: string, password: string, totp: string): P
         }
     }
 
-    setCookie("token", data?.token)
+    setCookie("token", data?.token, 365)
     return {
         status: true,
         message: "Berhasil login"
     }
 }
 
-export const resume = async (): Promise<{
+
+export const serviceProfile = async (username: string): Promise<{ status: boolean, data?: any, message: string }> => {
+
+    const token = getCookie("token");
+    const data: any = await requestPost("/api/profile", {
+        username: username,
+    }, "", {
+        headers: {
+            Authorization: "Bearer " + token,
+        },
+    });
+
+    if (!data?.data) {
+        return {
+            status: false,
+            message: data?.message
+        }
+    }
+    return {
+        status: true,
+        data: data?.data?.data,
+        message: ""
+    }
+}
+
+export const serviceResume = async (): Promise<{
     status: boolean,
     message?: string,
     data: {
@@ -71,7 +96,7 @@ type Riwayat = {
     check: string //'Pagi'
 }
 
-export const riwayat = async (): Promise<{
+export const serviceRiwayat = async (): Promise<{
     status: boolean,
     message?: string,
     data: Riwayat[]
@@ -97,7 +122,7 @@ export const riwayat = async (): Promise<{
 }
 
 
-export const faceverification = async (image: string): Promise<{
+export const serviceFaceverification = async (image: string): Promise<{
     status: boolean,
     message?: string,
 }> => {
@@ -121,7 +146,7 @@ export const faceverification = async (image: string): Promise<{
 }
 
 
-export const presensi = async (image: string): Promise<{
+export const servicePresensi = async (): Promise<{
     status: boolean,
     message?: string,
 }> => {
@@ -129,7 +154,8 @@ export const presensi = async (image: string): Promise<{
 
     const payload = {
         timezone: "Asia/Jakarta",
-        workfrom: 1
+        workfrom: 1,
+        username: "199710262023211003"
     };
 
     // const image = ""
