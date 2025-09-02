@@ -9,7 +9,7 @@ type Handler = (req: Request, params: Record<string, string>) => Promise<Respons
 // Router map: key = "METHOD:/path", value = handler function
 const routes = new Map<string, Handler>();
 
-const API_UR:string = import.meta.env.API_URL ?? ""
+const API_URL:string = import.meta.env.API_URL ?? ""
 
 
 // Register route POST /api/echo
