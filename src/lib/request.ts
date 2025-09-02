@@ -30,6 +30,8 @@ export async function requestGet<T = unknown>(
     cookie?: string,
     options?: RequestInit
 ): Promise<T> {
+    try{
+
     const res = await fetch(url, {
         method: 'GET',
         headers: {
@@ -44,6 +46,8 @@ export async function requestGet<T = unknown>(
         throw new Error(`Request failed: ${res.status} ${res.statusText}`);
     }
     return res.json() as Promise<T>;
+    }catch(err){}
+    return {} as T
 }
 
 export async function requestPost<T = unknown>(
@@ -52,19 +56,29 @@ export async function requestPost<T = unknown>(
     cookie?: string,
     options?: RequestInit
 ): Promise<T> {
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'okhttp/4.9.0',
-            ...(cookie ? { 'Cookie': cookie } : {}),
-            ...(options?.headers || {}),
-        },
-        body: JSON.stringify(data),
-        ...options,
-    });
-    if (!res.ok) {
-        throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+
+
+    try {
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'User-Agent': 'okhttp/4.9.0',
+                ...(cookie ? { 'Cookie': cookie } : {}),
+                ...(options?.headers || {}),
+            },
+            body: JSON.stringify(data),
+            ...options,
+        });
+        if (!res.ok) {
+            throw new Error(`Request failed: ${res.status} ${res.statusText}`);
+        }
+        return res.json() as Promise<T>;
+
+    } catch (err) {
+
     }
-    return res.json() as Promise<T>;
+
+    return {} as T
 }
